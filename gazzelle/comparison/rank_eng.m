@@ -1,0 +1,298 @@
+clc
+clear all;
+
+% Search agent parameters
+SearchAgents_no = 300;
+Max_iteration = 100;
+num_runs = 50;  % Number of runs for each function
+a = 1;
+b = 13;
+
+% Pre-allocate arrays for storing results
+scso_scores = zeros(num_runs, b - a + 1);  % Stores best scores for original SCSO
+mgoa_scores = zeros(num_runs, b - a + 1);
+aoa_scores = zeros(num_runs, b - a + 1);
+fho_scores = zeros(num_runs, b - a + 1);
+woa_scores = zeros(num_runs, b - a + 1);
+goa_scores = zeros(num_runs, b - a + 1);
+coa_scores = zeros(num_runs, b - a + 1);
+gwo_scores = zeros(num_runs, b - a + 1);
+
+% Stores best scores for modified SCSO
+p_values_scso = zeros(1, b - a + 1);
+p_values_gwo = zeros(1, b - a + 1);
+p_values_mgoa = zeros(1, b - a + 1);
+p_values_aoa = zeros(1, b - a + 1);
+p_values_woa = zeros(1, b - a + 1);
+p_values_goa = zeros(1, b - a + 1);
+p_values_fho = zeros(1, b - a + 1);
+
+
+h_values_scso = zeros(1, b - a + 1);
+h_values_gwo = zeros(1, b - a + 1);
+h_values_mgoa = zeros(1, b - a + 1);
+h_values_fho = zeros(1, b - a + 1);
+h_values_woa = zeros(1, b - a + 1);
+h_values_goa = zeros(1, b - a + 1);
+h_values_aoa = zeros(1, b - a + 1);
+
+mgoa_results = zeros(3, b - a + 1);
+woa_results = zeros(3, b - a + 1);
+fho_results = zeros(3, b - a + 1);
+aoa_results = zeros(3, b - a + 1);
+goa_results = zeros(3, b - a + 1);
+gwo_results = zeros(3, b - a + 1);
+scso_results = zeros(3, b - a + 1);
+coa_results = zeros(3, b - a + 1);
+
+folder_path = 'Results_eng_all';  % Create a folder named "p_value_results"
+% Create the folder if it doesn't exist
+if ~exist(folder_path, 'dir')
+    mkdir(folder_path);
+end
+
+% pool = parpool('local', 'AttachedFiles', {'COA.m', 'CEC2014.m', 'CEC2017.m', 'Convergence_Curve.m', 'DGSSCSO.m', 'Get_Functions_details.m', 'GOA2.m', 'GWO.m', 'initialization.m', 'initialization_.m', 'initialization_goa.m', 'initialization_woa.m','initialization_coa.m', 'levy.m', 'main.m', 'main2.m', 'Modification.m', 'PSCSO.m', 'rank.m', 'RouletteWheelSelection.m', 'SCSO.m', 'tightfig.m', 'TournamentSelection.m', 'WOA.m'});
+% Automatically select the available Nvidia GPU
+% gpuDevice(); % This will automatically select the first available Nvidia GPU
+
+tmp_scores = zeros(num_runs, 8);
+
+for i = a:b
+    if i==10
+        continue;
+    end    
+    % Define test function details (replace with your implementation)
+    Function_name = sprintf('F%d', i);
+    [dim, lb, ub, Vio, GloMin, fobj] = ProbInfo(i);
+    
+    tmp_scso_scores = zeros(num_runs, 1);
+    tmp_mgoa_scores = zeros(num_runs, 1);
+    tmp_fho_scores = zeros(num_runs, 1);
+    tmp_coa_scores = zeros(num_runs, 1);
+    tmp_woa_scores = zeros(num_runs, 1);
+    tmp_goa_scores = zeros(num_runs, 1);
+    tmp_aoa_scores = zeros(num_runs, 1);
+    tmp_gwo_scores = zeros(num_runs, 1);
+
+    for run = 1:num_runs
+        % Run original SCSO
+        disp(["SCSO"]);
+        [scs, ~, ~] = SCSO_eng(SearchAgents_no, Max_iteration, lb, ub, dim, fobj,Vio);
+        k = max(1, floor(0.25 * SearchAgents_no));
+        disp(["MGOA"]);
+        [mgoa, ~, ~] = GOA16_2_eng(SearchAgents_no, Max_iteration, lb, ub, dim, fobj,Vio);
+        disp(["FHO"]);
+        [fho, ~, ~] = FHO_eng(SearchAgents_no, Max_iteration, lb, ub, dim, fobj,Vio);
+        disp(["COA"]);
+        [coa, ~, ~,~] = COA_eng(SearchAgents_no, Max_iteration, lb, ub, dim, fobj,Vio);
+        disp(["WOA"]);
+        [wa, ~, ~] = WOA_eng(SearchAgents_no, Max_iteration, lb, ub, dim, fobj,Vio);
+        disp(["GOA"]);
+        [goa, ~, ~] = GOA2_eng(SearchAgents_no, Max_iteration, lb, ub, dim, fobj,Vio);
+        disp(["GWO"]);
+        [gw, ~, ~] = GWO_eng(SearchAgents_no, Max_iteration, lb, ub, dim, fobj,Vio);
+        disp(["AOA"]);
+        [aa,~, ~] = AOA_eng(SearchAgents_no, Max_iteration, lb, ub, dim,fobj,2,0.5,Vio);
+
+
+
+        % Create temporary variables to store results for this loop iteration
+            
+
+       
+
+        tmp_scso_scores(run) = scs;
+        tmp_fho_scores(run) = fho;
+        tmp_mgoa_scores(run) = mgoa;
+        tmp_coa_scores(run) = coa;
+        tmp_woa_scores(run) = wa;
+        tmp_goa_scores(run) = goa;
+        tmp_aoa_scores(run) = aa;
+        tmp_gwo_scores(run) = gw;
+        fprintf("Run %d done", run);
+    end
+    scso_scores(:, i) = tmp_scso_scores;
+    fho_scores(:, i) = tmp_fho_scores;
+    mgoa_scores(:, i) = tmp_mgoa_scores;
+    aoa_scores(:, i) = tmp_aoa_scores;
+    woa_scores(:, i) = tmp_woa_scores;
+    goa_scores(:, i) = tmp_goa_scores;
+    coa_scores(:, i) = tmp_coa_scores;
+    gwo_scores(:, i) = tmp_gwo_scores;
+    % Wilcoxon Rank Sum test
+    % [p_values_scso(i), h_values_scso(i), ~] = ranksum(scso_scores(:, i), mscso_scores(:, i));
+    % [p_values_goa(i), h_values_goa(i), ~] = ranksum(goa_scores(:, i), mscso_scores(:, i));
+    % [p_values_pscso(i), h_values_pscso(i), ~] = ranksum(pscso_scores(:, i), mscso_scores(:, i));
+    % [p_values_dgsscso(i), h_values_dgsscso(i), ~] = ranksum(dgsscso_scores(:, i), mscso_scores(:, i));
+    % [p_values_gwo(i), h_values_gwo(i), ~] = ranksum(gwo_scores(:, i), mscso_scores(:, i));
+    % [p_values_coa(i), h_values_coa(i), ~] = ranksum(coa_scores(:, i), mscso_scores(:, i));
+    % [p_values_woa(i), h_values_woa(i), ~] = ranksum(woa_scores(:, i), mscso_scores(:, i));
+
+    fprintf("Function %d done", i);
+
+    % Save results to separate CSV files
+end
+
+% Save p-values and h-values to separate CSV files
+% save(fullfile(folder_path, 'p_values_scso.mat'), 'p_values_scso');
+% save(fullfile(folder_path, 'p_values_goa.mat'), 'p_values_goa');
+% save(fullfile(folder_path, 'p_values_gwo.mat'), 'p_values_gwo');
+% save(fullfile(folder_path, 'p_values_woa.mat'), 'p_values_woa');
+% save(fullfile(folder_path, 'p_values_pscso.mat'), 'p_values_pscso');
+% save(fullfile(folder_path, 'p_values_coa.mat'), 'p_values_coa');
+% save(fullfile(folder_path, 'p_values_dgsscso.mat'), 'p_values_dgsscso');
+% 
+% save(fullfile(folder_path, 'h_values_scso.mat'), 'h_values_scso');
+% save(fullfile(folder_path, 'h_values_goa.mat'), 'h_values_goa');
+% save(fullfile(folder_path, 'h_values_gwo.mat'), 'h_values_gwo');
+% save(fullfile(folder_path, 'h_values_woa.mat'), 'h_values_woa');
+% save(fullfile(folder_path, 'h_values_pscso.mat'), 'h_values_pscso');
+% save(fullfile(folder_path, 'h_values_coa.mat'), 'h_values_coa');
+% save(fullfile(folder_path, 'h_values_dgsscso.mat'), 'h_values_dgsscso');
+% 
+% disp('p-values and h-values saved to p_value_results folder!');
+
+% Function to calculate average, variance, and best fitness
+
+%scso
+for i = a:b
+    for j = 1:3
+        if (j == 1)
+            scso_results(i, j) = mean(scso_scores(:, i));
+        end
+        if (j == 2)
+            scso_results(i, j) = var(scso_scores(:, i));
+        end
+        if (j == 3)
+            scso_results(i, j) = min(scso_scores(:, i));
+        end
+    end
+end
+
+%aoa
+for i = a:b
+    for j = 1:3
+        if (j == 1)
+            aoa_results(i, j) = mean(aoa_scores(:, i));
+        end
+        if (j == 2)
+            aoa_results(i, j) = var(aoa_scores(:, i));
+        end
+        if (j == 3)
+            aoa_results(i, j) = min(aoa_scores(:, i));
+        end
+    end
+end
+
+%dgssco
+for i = a:b
+    for j = 1:3
+        if (j == 1)
+            fho_results(i, j) = mean(fho_scores(:, i));
+        end
+        if (j == 2)
+            fho_results(i, j) = var(fho_scores(:, i));
+        end
+        if (j == 3)
+            fho_results(i, j) = min(fho_scores(:, i));
+        end
+    end
+end
+
+%woa
+for i = a:b
+    for j = 1:3
+        if (j == 1)
+            woa_results(i, j) = mean(woa_scores(:, i));
+        end
+        if (j == 2)
+            woa_results(i, j) = var(woa_scores(:, i));
+        end
+        if (j == 3)
+            woa_results(i, j) = min(woa_scores(:, i));
+        end
+    end
+end
+%goa
+for i = a:b
+    for j = 1:3
+        if (j == 1)
+            goa_results(i, j) = mean(goa_scores(:, i));
+        end
+        if (j == 2)
+            goa_results(i, j) = var(goa_scores(:, i));
+        end
+        if (j == 3)
+            goa_results(i, j) = min(goa_scores(:, i));
+        end
+    end
+end
+
+%gwo
+for i = a:b
+    for j = 1:3
+        if (j == 1)
+            gwo_results(i, j) = mean(gwo_scores(:, i));
+        end
+        if (j == 2)
+            gwo_results(i, j) = var(gwo_scores(:, i));
+        end
+        if (j == 3)
+            gwo_results(i, j) = min(gwo_scores(:, i));
+        end
+    end
+end
+
+%pscso
+for i = a:b
+    for j = 1:3
+        if (j == 1)
+            mgoa_results(i, j) = mean(mgoa_scores(:, i));
+        end
+        if (j == 2)
+            mgoa_results(i, j) = var(mgoa_scores(:, i));
+        end
+        if (j == 3)
+          mgoa_results(i, j) = min(mgoa_scores(:, i));
+        end
+    end
+end
+
+%mscso
+for i = a:b
+    for j = 1:3
+        if (j == 1)
+            coa_results(i, j) = mean(coa_scores(:, i));
+        end
+        if (j == 2)
+            coa_results(i, j) = var(coa_scores(:, i));
+        end
+        if (j == 3)
+            coa_results(i, j) = min(coa_scores(:, i));
+        end
+    end
+end
+
+% Save results to separate MAT files
+save(fullfile(folder_path, 'mgoa_results.mat'), 'mgoa_results');
+save(fullfile(folder_path, 'goa_results.mat'), 'goa_results');
+save(fullfile(folder_path, 'coa_results.mat'), 'coa_results');
+save(fullfile(folder_path, 'woa_results.mat'), 'woa_results');
+save(fullfile(folder_path, 'aoa_results.mat'), 'aoa_results');
+save(fullfile(folder_path, 'gwo_results.mat'), 'gwo_results');
+save(fullfile(folder_path, 'fho_results.mat'), 'fho_results');
+save(fullfile(folder_path, 'scso_results.mat'), 'scso_results');
+
+
+save(fullfile(folder_path, 'mgoa_scores.mat'), 'mgoa_scores');
+save(fullfile(folder_path, 'goa_scores.mat'), 'goa_scores');
+save(fullfile(folder_path, 'coa_scores.mat'), 'coa_scores');
+save(fullfile(folder_path, 'woa_scores.mat'), 'woa_scores');
+save(fullfile(folder_path, 'aoa_scores.mat'), 'aoa_scores');
+save(fullfile(folder_path, 'gwo_scores.mat'), 'gwo_scores');
+save(fullfile(folder_path, 'fho_scores.mat'), 'fho_scores');
+save(fullfile(folder_path, 'scso_scores.mat'), 'scso_scores');
+
+
+
+disp('Score values saved to p_value_results folder!');

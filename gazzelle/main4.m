@@ -1,0 +1,44 @@
+clear all
+clear all
+clc
+format long
+
+% Define parameters
+SearchAgents_no = 50; % Number of search agents
+Max_iteration = 1000; % Maximum number of iterations
+Num_iterations = 3; % Number of iterations to average over
+
+% Initialize variables to store average results
+average_results_GOA6 = zeros(23, 1);
+average_results_GOA2 = zeros(23, 1);
+
+
+% Loop through each function
+for i = 1:23
+    % Initialize variables to store results for each iteration
+    results_GOA6 = zeros(Num_iterations, 1);
+    results_GOA2 = zeros(Num_iterations, 1);
+    
+    for j = 1:Num_iterations
+        % Get function details
+        Function_name = ['F', num2str(i)];
+        [lb, ub, dim, fobj] = Get_Functions_details(Function_name);
+
+        % Run GOA6 algorithm
+        [Best_score_6, Best_pos_6, Convergence_curve_6] = GOA8(35, Max_iteration, lb, ub, dim, fobj);
+        results_GOA6(j) = Best_score_6;
+
+        % Run GOA2 algorithm
+    end
+    
+    % Calculate average results
+    average_results_GOA6(i) = mean(results_GOA6);
+    average_results_GOA2(i) = mean(results_GOA2);
+end
+
+% Display results in tabular form
+fprintf('Function\tAverage GOA6 Optimal Value\tAverage GOA2 Optimal Value\n');
+for i = 1:23
+    fprintf('%d\t\t%s\t\t\t\t\t%s\n', i , num2str(average_results_GOA6(i)), num2str(average_results_GOA2(i)));
+end
+
